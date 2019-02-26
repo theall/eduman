@@ -1,7 +1,7 @@
-ï»¿<script type="text/javascript">
+<script type="text/javascript">
 function createButtons() {
-    var exportButton = document.createElement("<input type=\"button\" value=\"å¯¼å‡ºExcel\" onclick=\"scoreExport();\">");
-    var uploadButton = document.createElement("<input type=\"button\" value=\"ä¸Šä¼ Excel\" onclick=\"scoreUpload();\">");
+    var exportButton = document.createElement("<input type=\"button\" value=\"µ¼³öExcel\" onclick=\"scoreExport();\">");
+    var uploadButton = document.createElement("<input type=\"button\" value=\"ÉÏ´«Excel\" onclick=\"scoreUpload();\">");
     var courseEl = document.getElementById("ddlkc");
     var courseName = courseEl.options[courseEl.selectedIndex].text;
     if(courseName.length<3) {
@@ -22,19 +22,19 @@ function readWorkbookFromLocalFile(file, callback) {
     reader.readAsBinaryString(file);
 }
 /**
- * é€šç”¨çš„æ‰“å¼€ä¸‹è½½å¯¹è¯æ¡†æ–¹æ³•ï¼Œæ²¡æœ‰æµ‹è¯•è¿‡å…·ä½“å…¼å®¹æ€§
- * @param url ä¸‹è½½åœ°å€ï¼Œä¹Ÿå¯ä»¥æ˜¯ä¸€ä¸ªblobå¯¹è±¡ï¼Œå¿…é€‰
- * @param saveName ä¿å­˜æ–‡ä»¶åï¼Œå¯é€‰
+ * Í¨ÓÃµÄ´ò¿ªÏÂÔØ¶Ô»°¿ò·½·¨£¬Ã»ÓÐ²âÊÔ¹ý¾ßÌå¼æÈÝÐÔ
+ * @param url ÏÂÔØµØÖ·£¬Ò²¿ÉÒÔÊÇÒ»¸öblob¶ÔÏó£¬±ØÑ¡
+ * @param saveName ±£´æÎÄ¼þÃû£¬¿ÉÑ¡
  */
 function openDownloadDialog(url, saveName)
 {
     if(typeof url == 'object' && url instanceof Blob)
     {
-        url = URL.createObjectURL(url); // åˆ›å»ºblobåœ°å€
+        url = URL.createObjectURL(url); // ´´½¨blobµØÖ·
     }
     var aLink = document.createElement('a');
     aLink.href = url;
-    aLink.download = saveName || ''; // HTML5æ–°å¢žçš„å±žæ€§ï¼ŒæŒ‡å®šä¿å­˜æ–‡ä»¶åï¼Œå¯ä»¥ä¸è¦åŽç¼€ï¼Œæ³¨æ„ï¼Œfile:///æ¨¡å¼ä¸‹ä¸ä¼šç”Ÿæ•ˆ
+    aLink.download = saveName || ''; // HTML5ÐÂÔöµÄÊôÐÔ£¬Ö¸¶¨±£´æÎÄ¼þÃû£¬¿ÉÒÔ²»Òªºó×º£¬×¢Òâ£¬file:///Ä£Ê½ÏÂ²»»áÉúÐ§
     var event;
     if(window.MouseEvent) event = new MouseEvent('click');
     else
@@ -44,7 +44,7 @@ function openDownloadDialog(url, saveName)
     }
     aLink.dispatchEvent(event);
 }
-// å°†ä¸€ä¸ªsheetè½¬æˆæœ€ç»ˆçš„excelæ–‡ä»¶çš„blobå¯¹è±¡ï¼Œç„¶åŽåˆ©ç”¨URL.createObjectURLä¸‹è½½
+// ½«Ò»¸ösheet×ª³É×îÖÕµÄexcelÎÄ¼þµÄblob¶ÔÏó£¬È»ºóÀûÓÃURL.createObjectURLÏÂÔØ
 function sheet2blob(sheet, sheetName) {
     sheetName = sheetName || 'sheet1';
     var workbook = {
@@ -52,15 +52,15 @@ function sheet2blob(sheet, sheetName) {
         Sheets: {}
     };
     workbook.Sheets[sheetName] = sheet;
-    // ç”Ÿæˆexcelçš„é…ç½®é¡¹
+    // Éú³ÉexcelµÄÅäÖÃÏî
     var wopts = {
-        bookType: 'xlsx', // è¦ç”Ÿæˆçš„æ–‡ä»¶ç±»åž‹
-        bookSST: false, // æ˜¯å¦ç”ŸæˆShared String Tableï¼Œå®˜æ–¹è§£é‡Šæ˜¯ï¼Œå¦‚æžœå¼€å¯ç”Ÿæˆé€Ÿåº¦ä¼šä¸‹é™ï¼Œä½†åœ¨ä½Žç‰ˆæœ¬IOSè®¾å¤‡ä¸Šæœ‰æ›´å¥½çš„å…¼å®¹æ€§
+        bookType: 'xlsx', // ÒªÉú³ÉµÄÎÄ¼þÀàÐÍ
+        bookSST: false, // ÊÇ·ñÉú³ÉShared String Table£¬¹Ù·½½âÊÍÊÇ£¬Èç¹û¿ªÆôÉú³ÉËÙ¶È»áÏÂ½µ£¬µ«ÔÚµÍ°æ±¾IOSÉè±¸ÉÏÓÐ¸üºÃµÄ¼æÈÝÐÔ
         type: 'binary'
     };
     var wbout = XLSX.write(workbook, wopts);
     var blob = new Blob([s2ab(wbout)], {type:"application/octet-stream"});
-    // å­—ç¬¦ä¸²è½¬ArrayBuffer
+    // ×Ö·û´®×ªArrayBuffer
     function s2ab(s) {
         var buf = new ArrayBuffer(s.length);
         var view = new Uint8Array(buf);
@@ -75,7 +75,7 @@ function scoreExport() {
     var courseName = courseEl.options[courseEl.selectedIndex].text;
     if(courseName=="")
     {
-        window.alert("è¯¾ç¨‹åä¸ºç©º!");
+        window.alert("¿Î³ÌÃûÎª¿Õ!");
         return;
     }
     var oxl = new ActiveXObject("Excel.application"); 
@@ -83,7 +83,7 @@ function scoreExport() {
     owb = oxl.workbooks.Add();
     owb.worksheets(1).select();
     var osheet = owb.activesheet;
-    var titleHeads=new Array("å­¦å·","å§“å","è€ƒè¯•æˆç»©","å¹³æ—¶æˆç»©1","å¹³æ—¶æˆç»©2","å¹³æ—¶æˆç»©3","å¹³æ—¶æˆç»©4","å¹³æ—¶æˆç»©æ€»åˆ†","è€ƒå‹¤","æœ€ç»ˆæˆç»©");
+    var titleHeads=new Array("Ñ§ºÅ","ÐÕÃû","¿¼ÊÔ³É¼¨","Æ½Ê±³É¼¨1","Æ½Ê±³É¼¨2","Æ½Ê±³É¼¨3","Æ½Ê±³É¼¨4","Æ½Ê±³É¼¨×Ü·Ö","¿¼ÇÚ","×îÖÕ³É¼¨");
     for(var i=0;i<titleHeads.length;i++) {
         osheet.cells(1, i+1).value = titleHeads[i];
     }
@@ -106,9 +106,9 @@ function scoreExport() {
         osheet.cells(i, 9).value = document.getElementById("cj"+index+"|2").value;
         osheet.cells(i, 10).value = "=C"+i+"*0.6+H"+i+"*0.3+I"+i+"*0.1";
     }
-    // è®¾ç½®æ ¼å¼
+    // ÉèÖÃ¸ñÊ½
     for(var j=1;j<=10;j++) {
-        osheet.cells(1, j).Font.Name = "é»‘ä½“"; 
+        osheet.cells(1, j).Font.Name = "ºÚÌå"; 
     }
     for(var i=1;i<=tbl.firstChild.childNodes.length;i++) {
         for(var j=1;j<=10;j++) {
@@ -120,7 +120,7 @@ function scoreExport() {
     try {
         courseName = courseName.replace("[", "(");
         courseName = courseName.replace("]", ")");
-        var fname = oxl.Application.GetSaveAsFilename(courseName+"æˆç»©å½•å…¥", "Excel Spreadsheets (*.xlsx), *.xlsx");
+        var fname = oxl.Application.GetSaveAsFilename(courseName+"³É¼¨Â¼Èë", "Excel Spreadsheets (*.xlsx), *.xlsx");
     } catch (e) {
         print("Nested catch caught " + e);
     } finally {
@@ -131,7 +131,7 @@ function scoreExport() {
         oxl.Quit();
         oxl = null;
         
-        //ç»“æŸexcelè¿›ç¨‹ï¼Œé€€å‡ºå®Œæˆ
+        //½áÊøexcel½ø³Ì£¬ÍË³öÍê³É
         //window.setInterval("Cleanup();",1);
         idTmr = window.setInterval("Cleanup();", 1);
     }
@@ -145,14 +145,14 @@ function scoreUpload(){
 
     var oxl = new ActiveXObject("Excel.application");
     var owb;
-    //ä»ŽExcelé‡Œè¯»å–æ•°æ®åˆ°é¡µé¢
+    //´ÓExcelÀï¶ÁÈ¡Êý¾Ýµ½Ò³Ãæ
     var path = excelFile.value;
 
     owb = oxl.workbooks.open(path);
     owb.worksheets(1).select();
     var osheet = owb.activesheet;
     var lineCount = osheet.UsedRange.Cells.Rows.Count;
-    console.log("æ€»äººæ•° " + (lineCount - 1))
+    console.log("×ÜÈËÊý " + (lineCount - 1))
     var successCount = 0;
     var failCount = 0;
     for (var i = 2; i <= lineCount; i++) {
@@ -167,7 +167,7 @@ function scoreUpload(){
         var realNo = osheet.cells(i, 1).value;
         var realName = osheet.cells(i, 2).value;
         if (realNo != displayNo || realName != displayName) {
-            console.log("ç¬¬" + (index + 1) + "æ¡è®°å½•ä¸ä¸€è‡´,å­¦å·:" + realNo + "å§“å:" + realName);
+            console.log("µÚ" + (index + 1) + "Ìõ¼ÇÂ¼²»Ò»ÖÂ,Ñ§ºÅ:" + realNo + "ÐÕÃû:" + realName);
             failCount = failCount + 1;
             continue;
         }
@@ -181,10 +181,10 @@ function scoreUpload(){
         document.getElementById("zcj" + index).value = osheet.cells(i, 10).value.toFixed(1);
         successCount = successCount + 1;
     }
-    console.log("æˆåŠŸ:" + successCount + " å¤±è´¥:" + failCount);
+    console.log("³É¹¦:" + successCount + " Ê§°Ü:" + failCount);
     oxl.Quit();
     oxl = null;
-    //ç»“æŸexcelè¿›ç¨‹ï¼Œé€€å‡ºå®Œæˆ
+    //½áÊøexcel½ø³Ì£¬ÍË³öÍê³É
     //window.setInterval("Cleanup();",1);
     idTmr = window.setInterval("Cleanup();", 1);
 }
@@ -195,14 +195,14 @@ function scoreVerify() {
 
     var oxl = new ActiveXObject("Excel.application"); 
     var owb;
-    //ä»ŽExcelé‡Œè¯»å–æ•°æ®åˆ°é¡µé¢
+    //´ÓExcelÀï¶ÁÈ¡Êý¾Ýµ½Ò³Ãæ
     var path = excelFile.value;
         
     owb = oxl.workbooks.open(path);
     owb.worksheets(1).select();
     var osheet = owb.activesheet;
     var lineCount = osheet.UsedRange.Cells.Rows.Count;
-    console.log("æ€»äººæ•° "+(lineCount-1))
+    console.log("×ÜÈËÊý "+(lineCount-1))
     var failCount = 0;
     for(var i=2;i<=lineCount;i++) {
         var index = i - 2;
@@ -218,24 +218,24 @@ function scoreVerify() {
         realScore = realScore.toFixed(1);
         if(realNo!=displayNo || realName!=displayName || displayScore!=realScore)
         {
-            console.log("å­¦å·"+osheet.cells(i, 1).value+" å§“å"+osheet.cells(i, 2).value+" æˆç»©ä¸å¯¹!å®žé™…åˆ†æ•°ä¸º"+realScore);
+            console.log("Ñ§ºÅ"+osheet.cells(i, 1).value+" ÐÕÃû"+osheet.cells(i, 2).value+" ³É¼¨²»¶Ô!Êµ¼Ê·ÖÊýÎª"+realScore);
             failCount = failCount + 1;
         }
     }
     oxl.Quit();
     oxl = null;
 
-    //ç»“æŸexcelè¿›ç¨‹ï¼Œé€€å‡ºå®Œæˆ
+    //½áÊøexcel½ø³Ì£¬ÍË³öÍê³É
     //window.setInterval("Cleanup();",1);
     idTmr = window.setInterval("Cleanup();", 1);
-    // ä¸‹é¢ä»£ç ç”¨äºŽè§£å†³IE call Excelçš„ä¸€ä¸ªBUG, MSDNä¸­æä¾›çš„æ–¹æ³•:
+    // ÏÂÃæ´úÂëÓÃÓÚ½â¾öIE call ExcelµÄÒ»¸öBUG, MSDNÖÐÌá¹©µÄ·½·¨:
     //   setTimeout(CollectGarbage, 1);
-    // ç”±äºŽä¸èƒ½æ¸…é™¤(æˆ–åŒæ­¥)ç½‘é¡µçš„å—ä¿¡ä»»çŠ¶æ€, æ‰€ä»¥å°†å¯¼è‡´SaveAs()ç­‰æ–¹æ³•åœ¨
-    // ä¸‹æ¬¡è°ƒç”¨æ—¶æ— æ•ˆ.
+    // ÓÉÓÚ²»ÄÜÇå³ý(»òÍ¬²½)ÍøÒ³µÄÊÜÐÅÈÎ×´Ì¬, ËùÒÔ½«µ¼ÖÂSaveAs()µÈ·½·¨ÔÚ
+    // ÏÂ´Îµ÷ÓÃÊ±ÎÞÐ§.
     if(failCount==0) {
-        window.alert("æ ¡éªŒæˆåŠŸ!");
+        window.alert("Ð£Ñé³É¹¦!");
     } else {
-        window.alert("æ ¡éªŒå¤±è´¥!");
+        window.alert("Ð£ÑéÊ§°Ü!");
     }
 }
 function Cleanup() {
