@@ -13,6 +13,8 @@ var appendHtmlFileName = path.resolve('./appendHtml.js');
 var appendHtml = "";
 var templateDirectory = "./template";
 var templateList = {}
+var targetHost1 = "219.140.59.212";
+var targetHost2 = "10.12.16.248";
 
 function loadResource() {
     fs.readFile(appendHtmlFileName, function (err, data) {
@@ -256,7 +258,8 @@ function onrequest(req, res) {
         }
 
         var gotResponse = false;
-        var needModify = parsed.path == "/JWJS/JXYX_CJLR_LIST.aspx";
+        var isTargetHost = parsed.host==targetHost1 || parsed.host==targetHost2;
+        var needModify = isTargetHost && parsed.path == "/JWJS/JXYX_CJLR_LIST.aspx";
         var relocation = templateList[parsed.path.toLowerCase()];
         if(relocation != undefined) {
             console.log("Use local template %s", parsed.path);
