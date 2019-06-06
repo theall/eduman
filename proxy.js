@@ -19,6 +19,7 @@ var targetHost1 = "219.140.59.212";
 var targetHost2 = "10.12.16.248";
 
 function loadResource() {
+    console.log("Update resource.");
     fs.readFile(appendJsFileName, function (err, data) {
         // 读取文件失败/错误
         if (err) {
@@ -64,7 +65,7 @@ function loadResource() {
 }
 loadResource();
 fs.watchFile(appendJsFileName, {
-    interval: 20
+    interval: 500
 }, function (curr, prev) {
     if (Date.parse(curr.mtime) != Date.parse(prev.mtime)) {
         loadResource();
@@ -72,7 +73,7 @@ fs.watchFile(appendJsFileName, {
 });
 
 fs.watchFile(appendCssFileName, {
-    interval: 20
+    interval: 500
 }, function (curr, prev) {
     if (Date.parse(curr.mtime) != Date.parse(prev.mtime)) {
         loadResource();
@@ -317,19 +318,20 @@ function onrequest(req, res) {
                     headers["Content-Length"] += appendJs.length + appendCss.length;
                     res.writeHead(proxyRes.statusCode, headers);
                     proxyRes.on("data", function (chunk) {
-                        var index = chunk.lastIndexOf("</head>");
+                        // var index = chunk.lastIndexOf("</head>");
+                        // if (index >= 0) {
+                            // console.log("Find head:", chunk.length, chunk.length + appendCss.length);
+                            // const temp = Buffer.allocUnsafe(chunk.length + appendCss.length);
+                            // resBody = chunk.toString();
+                            // chunk.copy(temp, 0, 0, index);
+                            // appendCss.copy(temp, index, 0, appendCss.length);
+                            // chunk.copy(temp, index + appendCss.length, index, chunk.length);
+                            // console.log(temp.toString());
+                            // chunk = temp;
+                        // }
+                        var index = chunk.lastIndexOf("</body>");
                         if (index >= 0) {
-                            const temp = Buffer.allocUnsafe(chunk.length + appendCss.length);
-                            //resBody = chunk.toString();
-                            chunk.copy(temp, 0, 0, index);
-                            appendCss.copy(temp, index, 0, appendCss.length);
-                            chunk.copy(temp, index + appendCss.length, index, chunk.length);
-                            //resBody = temp.toString();
-                            chunk = temp;
-                        }
-                        index = chunk.lastIndexOf("</body>");
-                        if (index >= 0) {
-                            const temp = Buffer.allocUnsafe(chunk.length + appendJs.length);
+                            temp = Buffer.allocUnsafe(chunk.length + appendJs.length);
                             //resBody = chunk.toString();
                             chunk.copy(temp, 0, 0, index);
                             appendJs.copy(temp, index, 0, appendJs.length);

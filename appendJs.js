@@ -1,9 +1,9 @@
 <script type="text/javascript">
 function createButtons() {
-    var exportButton = document.createElement("<button type=\"button\" class=\"btn btn-primary\" onclick=\"\scoreExport()">导出Excel</button>");
-    var uploadButton = document.createElement("<button type=\"button\" class=\"btn btn-primary\" onclick=\"\scoreUpload()">上传Excel</button>");
-    var score60Button = document.createElement("<button type=\"button\" class=\"btn btn-primary\" onclick=\"\setScore60()">一键60分</button>");
-    var score100Button = document.createElement("<button type=\"button\" class=\"btn btn-primary\" onclick=\"\setScore100()">一键100分</button>");
+    var exportButton = document.createElement("<input type=\"button\" class=\"button\" value=\"导出Excel\" onclick=\"scoreExport();\">");
+    var uploadButton = document.createElement("<input type=\"button\" class=\"button\" value=\"上传Excel\" onclick=\"scoreUpload();\">");
+    var score60Button = document.createElement("<input type=\"button\" class=\"button\" value=\"一键60分\" onclick=\"setScore60();\">");
+    var score100Button = document.createElement("<input type=\"button\" class=\"button\" value=\"一键100分\" onclick=\"setScore100();\">");
     var courseEl = document.getElementById("ddlkc");
     var examElement = document.getElementById("ddlksxz");
     var examType = courseEl.options[examElement.selectedIndex].text;
