@@ -1,16 +1,25 @@
 <script type="text/javascript">
 function createButtons() {
-    var exportButton = document.createElement("<input type=\"button\" value=\"导出Excel\" onclick=\"scoreExport();\">");
-    var uploadButton = document.createElement("<input type=\"button\" value=\"上传Excel\" onclick=\"scoreUpload();\">");
+    var exportButton = document.createElement("<button type=\"button\" class=\"btn btn-primary\" onclick=\"\scoreExport()">导出Excel</button>");
+    var uploadButton = document.createElement("<button type=\"button\" class=\"btn btn-primary\" onclick=\"\scoreUpload()">上传Excel</button>");
+    var score60Button = document.createElement("<button type=\"button\" class=\"btn btn-primary\" onclick=\"\setScore60()">一键60分</button>");
+    var score100Button = document.createElement("<button type=\"button\" class=\"btn btn-primary\" onclick=\"\setScore100()">一键100分</button>");
     var courseEl = document.getElementById("ddlkc");
+    var examElement = document.getElementById("ddlksxz");
+    var examType = courseEl.options[examElement.selectedIndex].text;
     var courseName = courseEl.options[courseEl.selectedIndex].text;
     if(courseName.length<3) {
         exportButton.disabled = "disabled";
         uploadButton.disabled = "disabled";
+        //score60Button.disabled = "disabled";
+        //score100Button.disabled = "disabled";
     }
+    
     var parent = document.getElementById("dafxd").parentNode;
     parent.appendChild(exportButton);
     parent.appendChild(uploadButton);
+    parent.appendChild(score60Button);
+    parent.appendChild(score100Button);
 }
 function readWorkbookFromLocalFile(file, callback) {
     var reader = new FileReader();
@@ -238,6 +247,45 @@ function scoreVerify() {
         window.alert("校验失败!");
     }
 }
+
+function setScore60() {
+    var tbl = document.getElementById("mxh");
+    for(var i=2;i<=tbl.firstChild.childNodes.length;i++) {
+        var index = i - 2;
+        var examEl = document.getElementById("cj" + index + "|0");
+        if (!examEl) {
+            break;
+        }
+
+        examEl.value = 60;
+        for (var j = 0; j < 4; j++) {
+            document.getElementById("cjxm" + index + "|" + (1020 + j)).value = 0;
+        }
+        document.getElementById("cj" + index + "|1").value = 0;
+        document.getElementById("cj" + index + "|2").value = 0;
+        document.getElementById("zcj" + index).value = 60;
+    }
+}
+
+function setScore100() {
+    var tbl = document.getElementById("mxh");
+    for(var i=2;i<=tbl.firstChild.childNodes.length;i++) {
+        var index = i - 2;
+        var examEl = document.getElementById("cj" + index + "|0");
+        if (!examEl) {
+            break;
+        }
+
+        //examEl.value = 60;
+        for (var j = 0; j < 4; j++) {
+            document.getElementById("cjxm" + index + "|" + (1020 + j)).value = 100;
+        }
+        document.getElementById("cj" + index + "|1").value = 100;
+        document.getElementById("cj" + index + "|2").value = 100;
+        //document.getElementById("zcj" + index).value = 60;
+    }
+}
+
 function Cleanup() {
     window.clearInterval(idTmr);
     CollectGarbage();

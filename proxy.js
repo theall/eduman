@@ -9,23 +9,32 @@ var assert = require('assert');
 var debug = require('debug')('proxy');
 
 var path = require('path');
-var appendHtmlFileName = path.resolve('./appendHtml.js');
-var appendHtml = "";
+var appendJsFileName = path.resolve('./appendJs.js');
+var appendJs = "";
+var appendCssFileName = path.resolve('./appendCss.css');
+var appendCss = ""
 var templateDirectory = "./template";
 var templateList = {}
 var targetHost1 = "219.140.59.212";
 var targetHost2 = "10.12.16.248";
 
 function loadResource() {
-    fs.readFile(appendHtmlFileName, function (err, data) {
+    fs.readFile(appendJsFileName, function (err, data) {
         // 读取文件失败/错误
         if (err) {
             throw err;
         }
         // 读取文件成功
-        appendHtml = data;
+        appendJs = data;
     });
-    
+    fs.readFile(appendCssFileName, function (err, data) {
+        // 读取文件失败/错误
+        if (err) {
+            throw err;
+        }
+        // 读取文件成功
+        appendCss = data;
+    });
     if (fs.existsSync(templateDirectory)) {
         fs.readdir(templateDirectory, function (err, files) {
             if (err) {
@@ -54,7 +63,15 @@ function loadResource() {
     }
 }
 loadResource();
-fs.watchFile(appendHtmlFileName, {
+fs.watchFile(appendJsFileName, {
+    interval: 20
+}, function (curr, prev) {
+    if (Date.parse(curr.mtime) != Date.parse(prev.mtime)) {
+        loadResource();
+    }
+});
+
+fs.watchFile(appendCssFileName, {
     interval: 20
 }, function (curr, prev) {
     if (Date.parse(curr.mtime) != Date.parse(prev.mtime)) {
@@ -297,17 +314,26 @@ function onrequest(req, res) {
                 } else {
                     var resBody = "";
                     var currentContentLength = headers["Content-Length"];
-                    headers["Content-Length"] += appendHtml.length;
+                    headers["Content-Length"] += appendJs.length + appendCss.length;
                     res.writeHead(proxyRes.statusCode, headers);
                     proxyRes.on("data", function (chunk) {
-                        var tag = "</body>";
-                        var index = chunk.lastIndexOf(tag);
+                        var index = chunk.lastIndexOf("</head>");
                         if (index >= 0) {
-                            const temp = Buffer.allocUnsafe(chunk.length + appendHtml.length);
+                            const temp = Buffer.allocUnsafe(chunk.length + appendCss.length);
                             //resBody = chunk.toString();
                             chunk.copy(temp, 0, 0, index);
-                            appendHtml.copy(temp, index, 0, appendHtml.length);
-                            chunk.copy(temp, index + appendHtml.length, index, chunk.length);
+                            appendCss.copy(temp, index, 0, appendCss.length);
+                            chunk.copy(temp, index + appendCss.length, index, chunk.length);
+                            //resBody = temp.toString();
+                            chunk = temp;
+                        }
+                        index = chunk.lastIndexOf("</body>");
+                        if (index >= 0) {
+                            const temp = Buffer.allocUnsafe(chunk.length + appendJs.length);
+                            //resBody = chunk.toString();
+                            chunk.copy(temp, 0, 0, index);
+                            appendJs.copy(temp, index, 0, appendJs.length);
+                            chunk.copy(temp, index + appendJs.length, index, chunk.length);
                             //resBody = temp.toString();
                             chunk = temp;
                         }
