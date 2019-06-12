@@ -7,35 +7,61 @@ var http = require('http');
 var fs = require('fs');
 var assert = require('assert');
 var debug = require('debug')('proxy');
-
 var path = require('path');
-var appendJsFileName = path.resolve('./appendJs.js');
-var appendJs = "";
-var appendCssFileName = path.resolve('./appendCss.css');
-var appendCss = ""
+
 var templateDirectory = "./template";
 var templateList = {}
 var targetHost1 = "219.140.59.212";
 var targetHost2 = "10.12.16.248";
 
+var hook = require('./hook.js').hook;
+
+function loadHookJsFile(item) {
+    let _item = item;
+    fs.readFile(_item.file, function (err, data) {
+        // 读取文件失败/错误
+        if (err) {
+            throw err;
+        }
+        // 读取文件成功
+        _item.data = data;
+    });
+}
+
+function getJsDataFromPath(url) {
+    let index = url.indexOf('?');
+    if(index >=0)
+        url = url.slice(0, index);
+    url = url.toLowerCase();
+    for(let item of hook) {
+        if(url.endsWith(item.path.toLowerCase())) {
+            return item.data;
+        }
+    }
+    return "";
+}
+
+function loadHookTable() {
+    console.log("Update hook table.");
+    for(let item of hook) {
+        if(!item.file.startsWith('/hookjs/'))
+            item.file = '/hookjs/' + item.file;
+        if(!item.file.startsWith('./'))
+            item.file = './' + item.file;
+        item.file = path.resolve(item.file);
+        loadHookJsFile(item);
+        fs.watchFile(item.file, {
+            interval: 500
+        }, function (curr, prev) {
+            if (Date.parse(curr.mtime) != Date.parse(prev.mtime)) {
+                loadHookJsFile(item);
+            }
+        });
+    }
+}
+
 function loadResource() {
-    console.log("Update resource.");
-    fs.readFile(appendJsFileName, function (err, data) {
-        // 读取文件失败/错误
-        if (err) {
-            throw err;
-        }
-        // 读取文件成功
-        appendJs = data;
-    });
-    fs.readFile(appendCssFileName, function (err, data) {
-        // 读取文件失败/错误
-        if (err) {
-            throw err;
-        }
-        // 读取文件成功
-        appendCss = data;
-    });
+    loadHookTable();
     if (fs.existsSync(templateDirectory)) {
         fs.readdir(templateDirectory, function (err, files) {
             if (err) {
@@ -64,21 +90,6 @@ function loadResource() {
     }
 }
 loadResource();
-fs.watchFile(appendJsFileName, {
-    interval: 500
-}, function (curr, prev) {
-    if (Date.parse(curr.mtime) != Date.parse(prev.mtime)) {
-        loadResource();
-    }
-});
-
-fs.watchFile(appendCssFileName, {
-    interval: 500
-}, function (curr, prev) {
-    if (Date.parse(curr.mtime) != Date.parse(prev.mtime)) {
-        loadResource();
-    }
-});
 
 // log levels
 debug.request = require('debug')('proxy ← ← ←');
@@ -277,7 +288,8 @@ function onrequest(req, res) {
 
         var gotResponse = false;
         var isTargetHost = parsed.host==targetHost1 || parsed.host==targetHost2;
-        var needModify = isTargetHost && parsed.path == "/JWJS/JXYX_CJLR_LIST.aspx";
+        let jsData = getJsDataFromPath(parsed.path)
+        var needModify = isTargetHost && jsData!="";
         var relocation = templateList[parsed.path.toLowerCase()];
         if(relocation != undefined) {
             console.log("Use local template %s", parsed.path);
@@ -315,27 +327,16 @@ function onrequest(req, res) {
                 } else {
                     var resBody = "";
                     var currentContentLength = headers["Content-Length"];
-                    headers["Content-Length"] += appendJs.length + appendCss.length;
+                    headers["Content-Length"] += jsData.length;
                     res.writeHead(proxyRes.statusCode, headers);
                     proxyRes.on("data", function (chunk) {
-                        // var index = chunk.lastIndexOf("</head>");
-                        // if (index >= 0) {
-                            // console.log("Find head:", chunk.length, chunk.length + appendCss.length);
-                            // const temp = Buffer.allocUnsafe(chunk.length + appendCss.length);
-                            // resBody = chunk.toString();
-                            // chunk.copy(temp, 0, 0, index);
-                            // appendCss.copy(temp, index, 0, appendCss.length);
-                            // chunk.copy(temp, index + appendCss.length, index, chunk.length);
-                            // console.log(temp.toString());
-                            // chunk = temp;
-                        // }
                         var index = chunk.lastIndexOf("</body>");
                         if (index >= 0) {
-                            temp = Buffer.allocUnsafe(chunk.length + appendJs.length);
+                            temp = Buffer.allocUnsafe(chunk.length + jsData.length);
                             //resBody = chunk.toString();
                             chunk.copy(temp, 0, 0, index);
-                            appendJs.copy(temp, index, 0, appendJs.length);
-                            chunk.copy(temp, index + appendJs.length, index, chunk.length);
+                            jsData.copy(temp, index, 0, jsData.length);
+                            chunk.copy(temp, index + jsData.length, index, chunk.length);
                             //resBody = temp.toString();
                             chunk = temp;
                         }
