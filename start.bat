@@ -1,1 +1,1 @@
-node proxy.js
+nodemon proxy.js

@@ -18,7 +18,7 @@ var hook = require('./hook.js').hook;
 
 function loadHookJsFile(item) {
     let _item = item;
-    fs.readFile(_item.file, function (err, data) {
+    fs.readFile(_item.file, function(err, data) {
         // 读取文件失败/错误
         if (err) {
             throw err;
@@ -30,11 +30,11 @@ function loadHookJsFile(item) {
 
 function getJsDataFromPath(url) {
     let index = url.indexOf('?');
-    if(index >=0)
+    if (index >= 0)
         url = url.slice(0, index);
     url = url.toLowerCase();
-    for(let item of hook) {
-        if(url.endsWith(item.path.toLowerCase())) {
+    for (let item of hook) {
+        if (url.endsWith(item.path.toLowerCase())) {
             return item.data;
         }
     }
@@ -43,16 +43,16 @@ function getJsDataFromPath(url) {
 
 function loadHookTable() {
     console.log("Update hook table.");
-    for(let item of hook) {
-        if(!item.file.startsWith('/hookjs/'))
+    for (let item of hook) {
+        if (!item.file.startsWith('/hookjs/'))
             item.file = '/hookjs/' + item.file;
-        if(!item.file.startsWith('./'))
+        if (!item.file.startsWith('./'))
             item.file = './' + item.file;
         item.file = path.resolve(item.file);
         loadHookJsFile(item);
         fs.watchFile(item.file, {
             interval: 500
-        }, function (curr, prev) {
+        }, function(curr, prev) {
             if (Date.parse(curr.mtime) != Date.parse(prev.mtime)) {
                 loadHookJsFile(item);
             }
@@ -63,16 +63,16 @@ function loadHookTable() {
 function loadResource() {
     loadHookTable();
     if (fs.existsSync(templateDirectory)) {
-        fs.readdir(templateDirectory, function (err, files) {
+        fs.readdir(templateDirectory, function(err, files) {
             if (err) {
                 console.log(err);
                 return;
             }
 
             var count = files.length;
-            files.forEach(function (filename) {
+            files.forEach(function(filename) {
                 var fileFullName = templateDirectory + "/" + filename;
-                fs.readFile(fileFullName, function (err, data) {
+                fs.readFile(fileFullName, function(err, data) {
                     if (err) {
                         throw err;
                     }
@@ -160,7 +160,7 @@ function eachHeader(obj, fn) {
         // ideal scenario... >= node v0.11.x
         // every even entry is a "key", every odd entry is a "value"
         var key = null;
-        obj.rawHeaders.forEach(function (v) {
+        obj.rawHeaders.forEach(function(v) {
             if (key === null) {
                 key = v;
             } else {
@@ -172,11 +172,11 @@ function eachHeader(obj, fn) {
         // otherwise we can *only* proxy the header names as lowercase'd
         var headers = obj.headers;
         if (!headers) return;
-        Object.keys(headers).forEach(function (key) {
+        Object.keys(headers).forEach(function(key) {
             var value = headers[key];
             if (Array.isArray(value)) {
                 // set-cookie
-                value.forEach(function (val) {
+                value.forEach(function(val) {
                     fn(key, val);
                 });
             } else {
@@ -198,7 +198,7 @@ function onrequest(req, res) {
     // pause the socket during authentication so no data is lost
     socket.pause();
 
-    authenticate(server, req, function (err, auth) {
+    authenticate(server, req, function(err, auth) {
         socket.resume();
         if (err) {
             // an error occured during login!
@@ -206,7 +206,8 @@ function onrequest(req, res) {
             res.end((err.stack || err.message || err) + '\n');
             return;
         }
-        if (!auth) return requestAuthorization(req, res);
+        if (!auth)
+            return requestAuthorization(req, res);
         var parsed = url.parse(req.url);
 
         // proxy the request HTTP method
@@ -219,7 +220,7 @@ function onrequest(req, res) {
         var via = '1.1 ' + hostname + ' (proxy/' + version + ')';
 
         parsed.headers = headers;
-        eachHeader(req, function (key, value) {
+        eachHeader(req, function(key, value) {
             debug.request('Request Header: "%s: %s"', key, value);
             var keyLower = key.toLowerCase();
 
@@ -287,24 +288,29 @@ function onrequest(req, res) {
         }
 
         var gotResponse = false;
-        var isTargetHost = parsed.host==targetHost1 || parsed.host==targetHost2;
+        var isTargetHost = parsed.host == targetHost1 || parsed.host == targetHost2;
         let jsData = getJsDataFromPath(parsed.path)
-        var needModify = isTargetHost && jsData!="";
+        var needModify = isTargetHost && jsData != "";
         var relocation = templateList[parsed.path.toLowerCase()];
-        if(relocation != undefined) {
+        let isMyApi = parsed.path.startsWith("/theall");
+        if (relocation != undefined) {
             console.log("Use local template %s", parsed.path);
             res.writeHead(200, headers);
             res.write(relocation);
             res.end("");
+        } else if (isMyApi) {
+            let apiName = parsed.path.slice("/theall".length + 1);
+            console.log("Call api: %s", apiName);
         } else {
             var proxyReq = http.request(parsed);
-            console.log("Request:%s", parsed.path);
+            console.log("Request:%s Host:%s", parsed.path, parsed.hostname);
             debug.proxyRequest('%s %s HTTP/1.1 ', proxyReq.method, proxyReq.path);
-            proxyReq.on('response', function (proxyRes) {
+            proxyReq.on('response', function(proxyRes) {
                 debug.proxyResponse('HTTP/1.1 %s', proxyRes.statusCode);
+                //console.log('response', proxyRes);
                 gotResponse = true;
                 var headers = {};
-                eachHeader(proxyRes, function (key, value) {
+                eachHeader(proxyRes, function(key, value) {
                     debug.proxyResponse('Proxy Response Header: "%s: %s"', key, value);
                     if (isHopByHop.test(key)) {
                         debug.response('ignoring hop-by-hop header "%s"', key);
@@ -323,13 +329,13 @@ function onrequest(req, res) {
                 debug.response('HTTP/1.1 %s', proxyRes.statusCode);
                 if (!needModify) {
                     res.writeHead(proxyRes.statusCode, headers);
-                    proxyRes.pipe(res);          
+                    proxyRes.pipe(res);
                 } else {
                     var resBody = "";
                     var currentContentLength = headers["Content-Length"];
                     headers["Content-Length"] += jsData.length;
                     res.writeHead(proxyRes.statusCode, headers);
-                    proxyRes.on("data", function (chunk) {
+                    proxyRes.on("data", function(chunk) {
                         var index = chunk.lastIndexOf("</body>");
                         if (index >= 0) {
                             temp = Buffer.allocUnsafe(chunk.length + jsData.length);
@@ -342,15 +348,16 @@ function onrequest(req, res) {
                         }
                         res.write(chunk);
                     });
-                    proxyRes.on("end", function () {
+                    proxyRes.on("end", function() {
                         res.end("");
                     });
                 }
 
                 res.on('finish', onfinish);
             });
-            proxyReq.on('error', function (err) {
-                debug.proxyResponse('proxy HTTP request "error" event\n%s', err.stack || err);
+            proxyReq.on('error', function(err) {
+                debug.proxyResponse('proxy HTTP request "error" event\t', err.stack || err);
+                console.log(err.stack || err);
                 cleanup();
                 if (gotResponse) {
                     debug.response('already sent a response, just destroying the socket...');
@@ -365,7 +372,7 @@ function onrequest(req, res) {
                     res.end();
                 }
             });
-        
+
             // if the client closes the connection prematurely,
             // then close the upstream socket
             function onclose() {
@@ -508,7 +515,7 @@ function onconnect(req, socket, head) {
     // pause the socket during authentication so no data is lost
     socket.pause();
 
-    authenticate(this, req, function (err, auth) {
+    authenticate(this, req, function(err, auth) {
         socket.resume();
         if (err) {
             // an error occured during login!
@@ -576,7 +583,7 @@ function requestAuthorization(req, res) {
     res.end();
 }
 var server = setup(http.createServer());
-server.listen(8088, function () {
+server.listen(8088, function() {
     var port = server.address().port;
     console.log('HTTP(s) proxy server listening on port %d', port);
 });
