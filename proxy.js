@@ -13,8 +13,30 @@ var templateDirectory = "./template";
 var templateList = {}
 var targetHost1 = "219.140.59.212";
 var targetHost2 = "10.12.16.248";
-
+var excel = require('./lib/excel.js');
 var hook = require('./hook.js').hook;
+
+var debug_enable = false;
+var proxy_host = '127.0.0.1';
+var proxy_port = 44445;
+
+var temp_file_table = {};
+
+function getBytesCount(str) {
+    var bytesCount = 0;
+    if (str != null) {
+        for (var i = 0; i < str.length; i++) {
+            var c = str.charAt(i);
+            if (/^[\u0000-\u00ff]$/.test(c)) {
+                bytesCount += 1;
+            }
+            else {
+                bytesCount += 2;
+            }
+        }
+    }
+    return bytesCount;
+}
 
 function loadHookJsFile(item) {
     let _item = item;
@@ -209,10 +231,10 @@ function onrequest(req, res) {
         if (!auth)
             return requestAuthorization(req, res);
         var parsed = url.parse(req.url);
-
+        
         // proxy the request HTTP method
         parsed.method = req.method;
-
+        
         // setup outbound proxy request HTTP headers
         var headers = {};
         var hasXForwardedFor = false;
@@ -286,7 +308,11 @@ function onrequest(req, res) {
             res.end('Only "http:" protocol prefix is supported\n');
             return;
         }
-
+        
+        if(parsed.host == "www.16.248") {
+            parsed.host = targetHost2;
+            parsed.hostname = targetHost2;
+        }
         var gotResponse = false;
         var isTargetHost = parsed.host == targetHost1 || parsed.host == targetHost2;
         let jsData = getJsDataFromPath(parsed.path)
@@ -298,10 +324,57 @@ function onrequest(req, res) {
             res.writeHead(200, headers);
             res.write(relocation);
             res.end("");
-        } else if (isMyApi) {
-            let apiName = parsed.path.slice("/theall".length + 1);
-            console.log("Call api: %s", apiName);
+        } else if(isMyApi) {
+            if(parsed.method=='POST') {
+                parsed.postData = '';
+                // 通过req的data事件监听函数，每当接受到请求体的数据，就累加到post变量中
+                req.on('data', function(chunk){    
+                    parsed.postData += chunk;
+                });
+            
+                req.on('end', function(){
+                    let apiName = parsed.path.slice("/theall".length + 1);
+                    console.log("Call api: %s", apiName);
+                    let jsonData = JSON.parse(parsed.postData);
+                    let data = excel.save(jsonData);
+                    //jsonData["name"] = "test";
+                    let fileName = encodeURIComponent("/theall/" + jsonData["name"] + ".xlsx");
+                    let responseData = {};
+                    if(data.length > 0) {
+                        responseData['msg'] = 'OK';
+                    } else {
+                        responseData['msg'] = 'Error';
+                    }
+                    responseData['url'] = fileName;
+                    temp_file_table[fileName] = data;
+                    responseData = JSON.stringify(responseData);
+                    if(apiName == 'export') {
+                        headers['Content-Type'] = 'text/json';
+                        headers['Content-Length'] = responseData.length;
+                    }
+                    res.writeHead(200, headers);
+                    res.write(responseData);
+                    res.end("");
+                });
+            } else if(parsed.method == 'GET') {
+                let data = temp_file_table[parsed.path];
+                if(data == undefined) {
+                    res.writeHead(404, headers);
+                } else {
+                    headers['Content-Type'] = 'application/octet-stream';
+                    headers['Content-Disposition'] = "attachment;filename=";
+                    headers['Content-Length'] = data.length;
+                    res.writeHead(200, headers);
+                    res.write(data);
+                }
+                res.end("");
+            }
         } else {
+            if(debug_enable) {
+                parsed.host = proxy_host;
+                parsed.hostname = proxy_host;
+                parsed.port = proxy_port;
+            }
             var proxyReq = http.request(parsed);
             console.log("Request:%s Host:%s", parsed.path, parsed.hostname);
             debug.proxyRequest('%s %s HTTP/1.1 ', proxyReq.method, proxyReq.path);
@@ -332,8 +405,9 @@ function onrequest(req, res) {
                     proxyRes.pipe(res);
                 } else {
                     var resBody = "";
-                    var currentContentLength = headers["Content-Length"];
-                    headers["Content-Length"] += jsData.length;
+                    var currentContentLength = parseInt(headers["Content-Length"]);
+                    currentContentLength += jsData.length;
+                    headers["Content-Length"] = currentContentLength;
                     res.writeHead(proxyRes.statusCode, headers);
                     proxyRes.on("data", function(chunk) {
                         var index = chunk.lastIndexOf("</body>");

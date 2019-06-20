@@ -1,4 +1,36 @@
+<script type="text/javascript" src="/template/json2.js"></script>
 <script type="text/javascript">
+function downloadContent(content, fileName) {
+    // 创建隐藏的可下载链接
+    var data = new Blob([content]);
+    // for IE
+    if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+        window.navigator.msSaveOrOpenBlob(data, fileName);
+    }
+    // for Non-IE (chrome, firefox etc.)
+    else {
+        var a = document.createElement('a');
+        document.body.appendChild(a);
+        a.style = 'display: none';
+        var url = window.URL.createObjectURL(data);
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+    }
+};
+
+function downloadLink(link) {
+    var a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = link;
+    //a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
 function createButtons() {
     var exportButton = document.createElement("<input type=\"button\" class=\"button\" value=\"导出Excel\" onclick=\"scoreExport();\">");
     var uploadButton = document.createElement("<input type=\"button\" class=\"button\" value=\"上传Excel\" onclick=\"scoreUpload();\">");
@@ -9,8 +41,8 @@ function createButtons() {
     var examType = courseEl.options[examElement.selectedIndex].text;
     var courseName = courseEl.options[courseEl.selectedIndex].text;
     if (courseName.length < 3) {
-        exportButton.disabled = "disabled";
-        uploadButton.disabled = "disabled";
+        //exportButton.disabled = "disabled";
+        //uploadButton.disabled = "disabled";
         //score60Button.disabled = "disabled";
         //score100Button.disabled = "disabled";
     }
@@ -98,11 +130,11 @@ function getScoreJsonData() {
         if (displayName == "")
             break;
 
-        var record = []
+        var record = [];
         var examEl = document.getElementById("cj" + index + "|0");
         record.push(displayNo);
         record.push(displayName);
-        record.push(value);
+        record.push(examEl.value);
         for (var j = 0; j < 4; j++) {
             record.push(document.getElementById("cjxm" + index + "|" + (1020 + j)).value);
         }
@@ -115,6 +147,7 @@ function getScoreJsonData() {
     courseName = courseName.replace("[", "(");
     courseName = courseName.replace("]", ")");
     xlsData['name'] = courseName + "成绩录入";
+    return xlsData;
 }
 
 function sendRequest(reqUrl, data) {
@@ -127,17 +160,21 @@ function sendRequest(reqUrl, data) {
     if (xmlhttp == null) {
         alert("您的浏览器不支持AJAX！");
         return;
-
     }
+    xmlhttp.open("POST", reqUrl, false); 
     xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded"); //post需要设置Content-type，防止乱码
-    xmlhttp.open("POST", reqUrl, false); //第一个参数指明访问方式，第二次参数是目标url，第三个参数是“是否异步”，true表示异步，false表示同步
-    xmlhttp.send(data);
+    //第一个参数指明访问方式，第二次参数是目标url，第三个参数是“是否异步”，true表示异步，false表示同步
+    xmlhttp.send(JSON.stringify(data));
     return xmlhttp.responseText
 }
 
 function scoreExport() {
     var jsonData = getScoreJsonData();
-    sendRequest("/theall/export", jsonData);
+    var resData = sendRequest("/theall/export", jsonData);
+    resData = JSON.parse(resData);
+    if(resData['msg'] == 'OK') {
+        downloadLink(resData['url']);
+    }
 }
 
 function scoreUpload() {
