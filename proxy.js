@@ -326,32 +326,41 @@ function onrequest(req, res) {
             res.end("");
         } else if(isMyApi) {
             if(parsed.method=='POST') {
+                //parsed.postData = Buffer.allocUnsafe(1024*1024);
+                parsed.postSize = 0;
                 parsed.postData = '';
                 // 通过req的data事件监听函数，每当接受到请求体的数据，就累加到post变量中
-                req.on('data', function(chunk){    
+                req.on('data', function(chunk){
+                    //chunk.copy(parsed.postData, parsed.postSize, 0, chunk.length);
+                    parsed.postSize += chunk.length;
                     parsed.postData += chunk;
                 });
             
                 req.on('end', function(){
                     let apiName = parsed.path.slice("/theall".length + 1);
                     console.log("Call api: %s", apiName);
-                    let jsonData = JSON.parse(parsed.postData);
-                    let data = excel.save(jsonData);
-                    //jsonData["name"] = "test";
-                    let fileName = encodeURIComponent("/theall/" + jsonData["name"] + ".xlsx");
                     let responseData = {};
-                    if(data.length > 0) {
-                        responseData['msg'] = 'OK';
-                    } else {
-                        responseData['msg'] = 'Error';
-                    }
-                    responseData['url'] = fileName;
-                    temp_file_table[fileName] = data;
-                    responseData = JSON.stringify(responseData);
                     if(apiName == 'export') {
+                        let jsonData = JSON.parse(parsed.postData);
+                        let data = excel.save(jsonData);
+                        let fileName = encodeURIComponent("/theall/" + jsonData["name"] + ".xlsx");
+                        fileName = fileName.replace(/%2F/g, '/');
+                        if(data.length > 0) {
+                            responseData['msg'] = 'OK';
+                        } else {
+                            responseData['msg'] = 'Error';
+                        }
+                        responseData['url'] = fileName;
+                        temp_file_table[fileName] = data;
                         headers['Content-Type'] = 'text/json';
-                        headers['Content-Length'] = responseData.length;
+                    } else if(apiName == 'upload') {
+                        let fileName = './temp/temp.xlsx';
+                        fs.writeFileSync(fileName, parsed.postData);
+                        let data = excel.load(fileName);
+                        responseData['data'] = data;
                     }
+                    responseData = JSON.stringify(responseData);
+                    headers['Content-Length'] = responseData.length;
                     res.writeHead(200, headers);
                     res.write(responseData);
                     res.end("");

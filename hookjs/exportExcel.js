@@ -1,4 +1,5 @@
 <script type="text/javascript" src="/template/json2.js"></script>
+<script type="text/javascript" src="/template/blob.js"></script>
 <script type="text/javascript">
 function downloadContent(content, fileName) {
     // 创建隐藏的可下载链接
@@ -22,6 +23,8 @@ function downloadContent(content, fileName) {
 };
 
 function downloadLink(link) {
+    link = decodeURI(link);
+    link = link.replace(/%2F/g, '/');
     var a = document.createElement('a');
     a.style.display = 'none';
     a.href = link;
@@ -33,9 +36,10 @@ function downloadLink(link) {
 
 function createButtons() {
     var exportButton = document.createElement("<input type=\"button\" class=\"button\" value=\"导出Excel\" onclick=\"scoreExport();\">");
-    var uploadButton = document.createElement("<input type=\"button\" class=\"button\" value=\"上传Excel\" onclick=\"scoreUpload();\">");
+    var uploadButton = document.createElement("<input type=\"button\" class=\"button\" value=\"上传Excel\" onclick=\"scoreUploadLegacy();\">");
     var score60Button = document.createElement("<input type=\"button\" class=\"button\" value=\"一键60分\" onclick=\"setScore60();\">");
     var score100Button = document.createElement("<input type=\"button\" class=\"button\" value=\"一键100分\" onclick=\"setScore100();\">");
+    var scoreRandomButton = document.createElement("<input type=\"button\" class=\"button\" value=\"随机给分\" onclick=\"setScoreRandom();\">");
     var courseEl = document.getElementById("ddlkc");
     var examElement = document.getElementById("ddlksxz");
     var examType = courseEl.options[examElement.selectedIndex].text;
@@ -52,6 +56,11 @@ function createButtons() {
     parent.appendChild(uploadButton);
     parent.appendChild(score60Button);
     parent.appendChild(score100Button);
+    parent.appendChild(scoreRandomButton);
+}
+
+function setScoreRandom() {
+    
 }
 
 function readWorkbookFromLocalFile(file, callback) {
@@ -111,6 +120,21 @@ function sheet2blob(sheet, sheetName) {
     return blob;
 }
 
+function getFloat(value) {
+    if(value == '')
+        return 0.0;
+    return parseFloat(value);
+}
+
+function getTotalScoreLevel(str) {
+    if(str == '--')
+        return '';
+    var index = str.indexOf('[');
+    if(index > 0)
+        str = str.slice(0, index);
+    return str;
+}
+
 function getScoreJsonData() {
     var courseEl = document.getElementById("ddlkc");
     var courseName = courseEl.options[courseEl.selectedIndex].text;
@@ -134,13 +158,21 @@ function getScoreJsonData() {
         var examEl = document.getElementById("cj" + index + "|0");
         record.push(displayNo);
         record.push(displayName);
-        record.push(examEl.value);
+        record.push(getFloat(examEl.value));
         for (var j = 0; j < 4; j++) {
-            record.push(document.getElementById("cjxm" + index + "|" + (1020 + j)).value);
+            record.push(getFloat(document.getElementById("cjxm" + index + "|" + (1020 + j)).value));
         }
         record.push("=AVERAGE(D" + i + ":G" + i + ")");
-        record.push(document.getElementById("cj" + index + "|2").value);
-        record.push("=C" + i + "*0.6+H" + i + "*0.3+I" + i + "*0.1");
+        record.push(getFloat(document.getElementById("cj" + index + "|2").value));
+        
+        
+        if(document.getElementById('rbfsfs_1').checked) {
+            // 等级
+            var totalScore = getTotalScoreLevel(document.getElementById("zcj" + index).value);
+            record.push(totalScore);
+        } else {
+            record.push("=C" + i + "*0.6+H" + i + "*0.3+I" + i + "*0.1");
+        }
         xlsData['data'].push(record);
     }
 
@@ -150,7 +182,7 @@ function getScoreJsonData() {
     return xlsData;
 }
 
-function sendRequest(reqUrl, data) {
+function postRequest(reqUrl, data) {
     var xmlhttp = null;
     if (window.XMLHttpRequest) {
         xmlhttp = new XMLHttpRequest();
@@ -162,36 +194,68 @@ function sendRequest(reqUrl, data) {
         return;
     }
     xmlhttp.open("POST", reqUrl, false); 
-    xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded"); //post需要设置Content-type，防止乱码
+    xmlhttp.setRequestHeader("Content-type", "multipart/form-data"); //post需要设置Content-type，防止乱码
     //第一个参数指明访问方式，第二次参数是目标url，第三个参数是“是否异步”，true表示异步，false表示同步
-    xmlhttp.send(JSON.stringify(data));
+    xmlhttp.send(data);
+    return xmlhttp.responseText
+}
+
+function getRequest(reqUrl) {
+    var xmlhttp = null;
+    if (window.XMLHttpRequest) {
+        xmlhttp = new XMLHttpRequest();
+    } else if (window.ActiveXObject) {
+        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    if (xmlhttp == null) {
+        alert("您的浏览器不支持AJAX！");
+        return;
+    }
+    xmlhttp.open("GET", reqUrl, false); 
     return xmlhttp.responseText
 }
 
 function scoreExport() {
     var jsonData = getScoreJsonData();
-    var resData = sendRequest("/theall/export", jsonData);
+    jsonData = JSON.stringify(jsonData);
+    var resData = postRequest("/theall/export", jsonData);
+    if(resData == '') {
+        alert("No response!");
+        return;
+    }
     resData = JSON.parse(resData);
     if(resData['msg'] == 'OK') {
         downloadLink(resData['url']);
     }
 }
 
+function createGuid() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+        return v.toString(16);
+    });
+}
+
 function scoreUpload() {
-    var fileWrap = document.createElement("<div style=\"display:none\" </div>");
+    var fileWrap = document.createElement("<div style=\"display:block\" </div>");
+    var form = document.createElement("<form action=\"/theall/upload\" method=post enctype=\"multipart/form-data\"></form>");
     var excelFile = document.createElement("<input type=\"file\"/>");
-    fileWrap.appendChild(excelFile);
+    var guidEl = document.createElement("<input type=\"hidden\" name=\"guid\">");
+    var guid = createGuid();
+    guidEl.value = guid;
+    form.appendChild(excelFile);
+    form.appendChild(guidEl);
+    fileWrap.appendChild(form);
+    //fileWrap.appendChild(excelFile);
     document.body.appendChild(fileWrap);
     excelFile.click();
+    if(excelFile.value === '')
+        return;
+    
+    form.submit();
+}
 
-    var oxl = new ActiveXObject("Excel.application");
-    var owb;
-    //从Excel里读取数据到页面
-    var path = excelFile.value;
-
-    owb = oxl.workbooks.open(path);
-    owb.worksheets(1).select();
-    var osheet = owb.activesheet;
+function updateData(data) {
     var lineCount = osheet.UsedRange.Cells.Rows.Count;
     console.log("总人数 " + (lineCount - 1))
     var successCount = 0;
@@ -222,12 +286,64 @@ function scoreUpload() {
         document.getElementById("zcj" + index).value = osheet.cells(i, 10).value.toFixed(1);
         successCount = successCount + 1;
     }
+    document.body.removeChild(fileWrap);
+    console.log("成功:" + successCount + " 失败:" + failCount);    
+}
+
+function scoreUploadLegacy() {
+    var fileWrap = document.createElement("<div style=\"display:none\" </div>");
+    var excelFile = document.createElement("<input type=\"file\"/>");
+    fileWrap.appendChild(excelFile);
+    document.body.appendChild(fileWrap);
+    excelFile.click();
+
+    var oxl = new ActiveXObject("Excel.application");
+    var owb;
+    //从Excel里读取数据到页面
+    var path = excelFile.value;
+    if(path === '')
+        return;
+    
+    owb = oxl.workbooks.open(path);
+    owb.worksheets(1).select();
+    var osheet = owb.activesheet;
+    var lineCount = osheet.UsedRange.Cells.Rows.Count;
+    console.log("总人数 " + (lineCount - 1))
+    var successCount = 0;
+    var failCount = 0;
+    for (var i = 2; i <= lineCount; i++) {
+        var index = i - 2;
+        var examEl = document.getElementById("cj" + index + "|0");
+        if (!examEl) {
+            break;
+        }
+
+        var displayNo = document.getElementById("tr" + index).children[2].lastChild.data;
+        var displayName = document.getElementById("tr" + index).children[3].firstChild.data;
+        var realNo = osheet.cells(i, 1).value;
+        var realName = osheet.cells(i, 2).value;
+        if (realNo != displayNo || realName != displayName) {
+            console.log("第" + (index + 1) + "条记录不一致,学号:" + realNo + "姓名:" + realName);
+            failCount = failCount + 1;
+            continue;
+        }
+
+        examEl.value = osheet.cells(i, 3).value;
+        for (var j = 0; j < 4; j++) {
+            document.getElementById("cjxm" + index + "|" + (1020 + j)).value = osheet.cells(i, 4 + j).value;
+        }
+        document.getElementById("cj" + index + "|1").value = osheet.cells(i, 8).value;
+        document.getElementById("cj" + index + "|2").value = osheet.cells(i, 9).value;
+        
+        var totalScore = osheet.cells(i, 10).value;
+        if(typeof(totalScore) == 'number') {
+            totalScore = totalScore.toFixed(1);
+        }
+        document.getElementById("zcj" + index).value = totalScore;
+        successCount = successCount + 1;
+    }
+    document.body.removeChild(fileWrap);
     console.log("成功:" + successCount + " 失败:" + failCount);
-    oxl.Quit();
-    oxl = null;
-    //结束excel进程，退出完成
-    //window.setInterval("Cleanup();",1);
-    idTmr = window.setInterval("Cleanup();", 1);
 }
 
 function scoreVerify() {
