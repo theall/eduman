@@ -22,6 +22,15 @@ function downloadContent(content, fileName) {
     }
 };
 
+function selectAll() {
+    for(var i=0;i<100;i++){
+        var s = document.getElementById('zcj'+i)
+        if(s == null)
+            break;
+        s.children[2].selected = true;
+    }
+}
+
 function downloadLink(link) {
     link = decodeURI(link);
     link = link.replace(/%2F/g, '/');
@@ -40,6 +49,7 @@ function createButtons() {
     var score60Button = document.createElement("<input type=\"button\" class=\"button\" value=\"一键60分\" onclick=\"setScore60();\">");
     var score100Button = document.createElement("<input type=\"button\" class=\"button\" value=\"一键100分\" onclick=\"setScore100();\">");
     var scoreRandomButton = document.createElement("<input type=\"button\" class=\"button\" value=\"随机给分\" onclick=\"setScoreRandom();\">");
+    var select_all = document.createElement("<input type=\"button\" class=\"button\" value=\"所有及格\" onclick=\"selectAll();\">");
     var courseEl = document.getElementById("ddlkc");
     var examElement = document.getElementById("ddlksxz");
     var examType = courseEl.options[examElement.selectedIndex].text;
@@ -57,10 +67,26 @@ function createButtons() {
     parent.appendChild(score60Button);
     parent.appendChild(score100Button);
     parent.appendChild(scoreRandomButton);
+    parent.appendChild(select_all);
 }
 
 function setScoreRandom() {
-    
+    var tbl = document.getElementById("mxh");
+    for (var i = 2; i <= tbl.firstChild.childNodes.length; i++) {
+        var index = i - 2;
+        var examEl = document.getElementById("cj" + index + "|0");
+        if (!examEl) {
+            break;
+        }
+
+        //examEl.value = 60;
+        for (var j = 0; j < 4; j++) {
+            document.getElementById("cjxm" + index + "|" + (1020 + j)).value = Math.floor(Math.random()*40+60);
+        }
+        document.getElementById("cj" + index + "|1").value = 100;
+        document.getElementById("cj" + index + "|2").value = Math.floor(Math.random()*40+60);
+        document.getElementById("zcj" + index).value = Math.floor(Math.random()*40+60);
+    }
 }
 
 function readWorkbookFromLocalFile(file, callback) {
