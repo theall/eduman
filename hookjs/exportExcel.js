@@ -43,13 +43,21 @@ function downloadLink(link) {
     document.body.removeChild(a);
 }
 
+function createButton(value, clickFunc) {
+    var btn = document.createElement("input");
+    btn.className = "button";
+    btn.value = value;
+    btn.onclick = clickFunc;
+    return btn;
+}
+
 function createButtons() {
-    var exportButton = document.createElement("<input type=\"button\" class=\"button\" value=\"导出Excel\" onclick=\"scoreExport();\">");
-    var uploadButton = document.createElement("<input type=\"button\" class=\"button\" value=\"上传Excel\" onclick=\"scoreUploadLegacy();\">");
-    var score60Button = document.createElement("<input type=\"button\" class=\"button\" value=\"一键60分\" onclick=\"setScore60();\">");
-    var score100Button = document.createElement("<input type=\"button\" class=\"button\" value=\"一键100分\" onclick=\"setScore100();\">");
-    var scoreRandomButton = document.createElement("<input type=\"button\" class=\"button\" value=\"随机给分\" onclick=\"setScoreRandom();\">");
-    var select_all = document.createElement("<input type=\"button\" class=\"button\" value=\"所有及格\" onclick=\"selectAll();\">");
+    var exportButton = createButton("导出Excel", scoreExport);
+    var uploadButton = createButton("上传Excel", scoreUpload);
+    var score60Button = createButton("一键60分", setScore60);
+    var score100Button = createButton("一键100分", setScore100);
+    var scoreRandomButton = createButton("随机给分", setScoreRandom);
+    var selectAllButton = createButton("所有及格", selectAll);
     var courseEl = document.getElementById("ddlkc");
     var examElement = document.getElementById("ddlksxz");
     var examType = courseEl.options[examElement.selectedIndex].text;
@@ -67,7 +75,7 @@ function createButtons() {
     parent.appendChild(score60Button);
     parent.appendChild(score100Button);
     parent.appendChild(scoreRandomButton);
-    parent.appendChild(select_all);
+    parent.appendChild(selectAllButton);
 }
 
 function setScoreRandom() {
@@ -263,22 +271,22 @@ function createGuid() {
 }
 
 function scoreUpload() {
-    var fileWrap = document.createElement("<div style=\"display:block\" </div>");
-    var form = document.createElement("<form action=\"/theall/upload\" method=post enctype=\"multipart/form-data\"></form>");
-    var excelFile = document.createElement("<input type=\"file\"/>");
+    var fileWrap = document.createElement("<div style=\"display:block\"></div>");
+    var form = document.createElement("<form action=\"/theall/upload\" method=\"post\" enctype=\"multipart/form-data\"></form>");
+    var excelFile = document.createElement("<input type=\"file\" name=\"file\"/>");
     var guidEl = document.createElement("<input type=\"hidden\" name=\"guid\">");
     var guid = createGuid();
     guidEl.value = guid;
     form.appendChild(excelFile);
     form.appendChild(guidEl);
     fileWrap.appendChild(form);
-    //fileWrap.appendChild(excelFile);
     document.body.appendChild(fileWrap);
     excelFile.click();
     if(excelFile.value === '')
         return;
     
     form.submit();
+    document.body.removeChild(fileWrap);
 }
 
 function updateData(data) {
