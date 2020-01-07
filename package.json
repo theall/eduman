@@ -38,7 +38,8 @@
     "basic-auth-parser": "0.0.2",
     "commander": "2.9.0",
     "debug": "2.2.0",
-    "node-xlsx": "^0.15.0"
+    "node-xlsx": "^0.15.0",
+    "nodemon": "2.0.2"
   },
   "deprecated": false,
   "description": "An HTTP proxy written with Node.js (think Squid)",
