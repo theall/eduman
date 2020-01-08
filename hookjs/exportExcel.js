@@ -324,6 +324,12 @@ function updateData(data) {
     console.log("³É¹¦:" + successCount + " Ê§°Ü:" + failCount);    
 }
 
+function getValidValue(value) {
+    if(typeof(value) == "undefined")
+        value = '';
+    return value;
+}
+
 function scoreUploadLegacy() {
     var fileWrap = document.createElement("<div style=\"display:none\" </div>");
     var excelFile = document.createElement("<input type=\"file\"/>");
@@ -362,14 +368,14 @@ function scoreUploadLegacy() {
             continue;
         }
 
-        examEl.value = osheet.cells(i, 3).value;
+        examEl.value = getValidValue(osheet.cells(i, 3).value);
         for (var j = 0; j < 4; j++) {
-            document.getElementById("cjxm" + index + "|" + (1020 + j)).value = osheet.cells(i, 4 + j).value;
+            document.getElementById("cjxm" + index + "|" + (1020 + j)).value = getValidValue(osheet.cells(i, 4 + j).value);
         }
-        document.getElementById("cj" + index + "|1").value = osheet.cells(i, 8).value;
-        document.getElementById("cj" + index + "|2").value = osheet.cells(i, 9).value;
+        document.getElementById("cj" + index + "|1").value = getValidValue(osheet.cells(i, 8).value);
+        document.getElementById("cj" + index + "|2").value = getValidValue(osheet.cells(i, 9).value);
         
-        var totalScore = osheet.cells(i, 10).value;
+        var totalScore = getValidValue(osheet.cells(i, 10).value);
         if(typeof(totalScore) == 'number') {
             totalScore = totalScore.toFixed(1);
         }
