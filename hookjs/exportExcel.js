@@ -282,10 +282,16 @@ function scoreUpload() {
     fileWrap.appendChild(form);
     document.body.appendChild(fileWrap);
     excelFile.click();
-    if(excelFile.value === '')
+    if(excelFile.value === '') {
+        window.alert("excel file is empty");
         return;
+    }
     
-    form.submit();
+    try {
+        form.submit()
+    } catch(err) {
+        window.alert(err.message);
+    }
     document.body.removeChild(fileWrap);
 }
 
