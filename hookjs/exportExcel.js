@@ -1,6 +1,11 @@
 <script type="text/javascript" src="/template/json2.js"></script>
 <script type="text/javascript" src="/template/blob.js"></script>
 <script type="text/javascript">
+String.prototype.trim = function()    
+{    
+    return this.replace(/(^\s*)|(\s*$)/g, "");    
+}
+
 function downloadContent(content, fileName) {
     // 创建隐藏的可下载链接
     var data = new Blob([content]);
@@ -20,7 +25,102 @@ function downloadContent(content, fileName) {
         a.remove();
         window.URL.revokeObjectURL(url);
     }
-};
+}
+
+function getLevelStr(score) {
+    if(score>=90)
+        return 5;
+    else if(score >= 80)
+        return 4;
+    else if(score >= 70)
+        return 3;
+    else if(score >= 60)
+        return 2;
+    return 1;
+}
+
+function setLevelScore(scoreList) {
+    for(var i=0;i<scoreList.length;i++) {
+        var lastScore = scoreList[i];
+        if(typeof(lastScore)==="object")
+            lastScore = lastScore[lastScore.length-1];
+        var level = getLevelStr(lastScore);
+        var el = document.getElementById("zcj"+i);
+        if(el != undefined)
+            el.selectedIndex = level;
+    }
+}
+
+function setScore(scoreList) {
+    var successCount = 0;
+    var failCount = 0;
+    for (var i = 0; i <= scoreList.length; i++) {
+        var examEl = document.getElementById("cj" + i + "|0");
+        if (!examEl) {
+            break;
+        }
+
+        var displayNo = document.getElementById("tr" + i).children[2].lastChild.data;
+        var displayName = document.getElementById("tr" + i).children[3].firstChild.data;
+        var realNo = scoreList[i][0];
+        var realName = scoreList[i][1];
+        if (realNo != displayNo || realName != displayName) {
+            console.log("第" + (i + 1) + "条记录不一致,学号:" + realNo + "姓名:" + realName);
+            failCount = failCount + 1;
+            continue;
+        }
+
+        examEl.value = scoreList[i][2];// 考试成绩
+        for (var j = 0; j < 4; j++) {
+            document.getElementById("cjxm" + i + "|" + (1020 + j)).value = scoreList[i][3+j];//平时成绩
+        }
+        document.getElementById("cj" + i + "|1").value = scoreList[i][7];//平时成绩总分
+        document.getElementById("cj" + i + "|2").value = scoreList[i][8];//考勤成绩
+        document.getElementById("zcj" + i).value = scoreList[i][9];//最终成绩
+        successCount = successCount + 1;
+    }
+    console.log("成功:" + successCount + " 失败:" + failCount); 
+}
+
+function getScore(text) {
+    var score = parseFloat(text);
+    return Math.round(score);
+}
+
+function textAreaChanged() {
+    var text = document.getElementById("text_area").value;
+    var numberList = text.split("\n");
+    var scoreList = [];
+    for(var i=1;i<numberList.length;i++) {
+        var lineList = numberList[i].trim().split("\t");
+        for(var j=0;j<lineList.length;j++) {
+            if(j<2)
+                lineList[j] = lineList[j].trim();
+            else {
+                var score = getScore(lineList[j]);
+                lineList[j] = score;
+            }
+        }
+        scoreList.push(lineList);
+    }
+    var scoreRadio = document.getElementById("rbfsfs_0");
+    if(scoreRadio.checked) {
+        setScore(scoreList);
+    } else {
+        setLevelScore(scoreList);
+    }
+}
+
+function createTextArea() {
+    var textArea = document.createElement("textarea");
+    textArea.id = "text_area";
+    //textArea.style = "width:800px;height:100px;";
+    document.body.appendChild(textArea);
+    var setButton = document.createElement("button");
+    setButton.onclick = textAreaChanged;
+    setButton.innerText = "写入";
+    document.body.appendChild(setButton);
+}
 
 function selectAll() {
     for(var i=0;i<100;i++){
@@ -71,7 +171,7 @@ function createButtons() {
 
     var parent = document.getElementById("dafxd").parentNode;
     parent.appendChild(exportButton);
-    parent.appendChild(uploadButton);
+    //parent.appendChild(uploadButton);
     parent.appendChild(score60Button);
     parent.appendChild(score100Button);
     parent.appendChild(scoreRandomButton);
@@ -484,5 +584,6 @@ function Cleanup() {
     window.clearInterval(idTmr);
     CollectGarbage();
 }
-createButtons(); 
+createButtons();
+createTextArea();
 </script>
