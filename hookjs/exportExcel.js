@@ -100,6 +100,7 @@ function textAreaChanged() {
                 var score = getScore(lineList[j]);
                 lineList[j] = score;
             }
+            lineList[j] = Math.round(lineList[j]);
         }
         scoreList.push(lineList);
     }
