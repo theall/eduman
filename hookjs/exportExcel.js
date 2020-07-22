@@ -98,9 +98,8 @@ function textAreaChanged() {
                 lineList[j] = lineList[j].trim();
             else {
                 var score = getScore(lineList[j]);
-                lineList[j] = score;
+                lineList[j] = Math.round(score);;
             }
-            lineList[j] = Math.round(lineList[j]);
         }
         scoreList.push(lineList);
     }
