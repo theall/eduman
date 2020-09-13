@@ -132,12 +132,12 @@ function selectAll() {
 }
 
 function downloadLink(link) {
-    link = decodeURI(link);
-    link = link.replace(/%2F/g, '/');
+    //link = decodeURI(link);
+    //link = link.replace(/%2F/g, '/');
     var a = document.createElement('a');
     a.style.display = 'none';
     a.href = link;
-    //a.download = fileName;
+
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
