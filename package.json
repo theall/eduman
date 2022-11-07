@@ -44,7 +44,7 @@
   "deprecated": false,
   "description": "An HTTP proxy written with Node.js (think Squid)",
   "devDependencies": {
-    "mocha": "2.2.5"
+    "mocha": "10.1.0"
   },
   "homepage": "https://github.com/TooTallNate/proxy#readme",
   "keywords": [
