@@ -37,7 +37,7 @@
   "dependencies": {
     "basic-auth-parser": "0.0.2",
     "commander": "2.9.0",
-    "debug": "2.2.0",
+    "debug": "3.1.0",
     "node-xlsx": "^0.15.0",
     "nodemon": "2.0.2"
   },
